@@ -29,10 +29,28 @@ class Player(pygame.sprite.Sprite):
     def display(self):
         screen.blit(self.image,(self.x,self.y))
 
+    def move(self):
+        if key[pygame.K_LEFT]:
+            self.deltax = -4
+        elif key[pygame.K_RIGHT]:
+            self.deltax = 4
+        else:
+            self.deltax = 0
+            
+        if key[pygame.K_UP]:
+            self.deltay = -4
+        elif key[pygame.K_DOWN]:
+            self.deltay = 4
+        else:
+            self.deltay = 0
 
+    def update_position(self):
+        self.x += self.deltax
+        self.y += self.deltay
+
+player = Player(Screen_Width/2,Screen_Height/2,0,0)
 
 ################################################
-#player = Player(Screen_Width/2,Screen_Height/2,0,0)
 
 keepGameRunning = True
 
@@ -45,4 +63,13 @@ while keepGameRunning:
            
     key = pygame.key.get_pressed()
     screen.fill("Blue")
-    #player.display()
+    player.display()
+    player.move()
+    player.update_position()
+    pygame.display.flip()
+
+
+    clock.tick(FPS)
+
+pygame.quit()
+sys.exit()
