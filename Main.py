@@ -16,6 +16,68 @@ clock = pygame.time.Clock()
 
 FPS = 60
 
+
+Main_Dude_Front = pygame.image.load("Images/Main_Dude_Front.png")
+
+Birdle_Front = pygame.image.load("Images/Birdle_Back.png")
+Birdle_Back = pygame.image.load("Images/Birdle_Front.png")
+
+Main_Dude_Front = pygame.transform.scale(Main_Dude_Front,(55,50))
+
+Birdle_Front = pygame.transform.scale(Birdle_Front,(300,200))
+Birdle_Front = pygame.transform.scale(Birdle_Back,(300,200))
+
+Texts = ["has appeared!",("Run","Attack"),"What do you do","'s HP: "]
+
+class Moves():
+    def __init__(self,name,damage,type):
+        self.name = name
+        self.damage = damage
+        self.type = type
+
+poke = Moves("Poke",10,0)
+
+class Text():
+    def __init__(self,text,selected,x,y):
+        pass 
+
+
+class Monsters(pygame.sprite.Sprite):
+    def __init__(self,x,y,name,lv,front_image,back_image,stats,moves):
+        super().__init__()
+
+        self.x = x
+        self.y = y
+
+        self.name = name
+
+        self.lv = lv
+
+        self.front_image = front_image
+        self.back_image = back_image
+
+        self.hp_ratio = stats[0]
+        self.attack_ratio = stats[1]
+        self.defense_ratio = stats[2]
+        self.special_ratio = stats[3]
+
+        self.hp = self.hp_ratio * self.lv
+        self.maxhp = self.hp
+        self.attack = self.attack_ratio * self.lv
+        self.defense = self.defense_ratio * self.lv
+        self.special = self.special_ratio * self.lv
+
+        self.move1 = moves[0]
+        self.move2 = moves[1]
+        self.move3 = moves[2]
+        self.move4 = moves[3]
+
+    def load_monster(self):
+        self.x += 5
+        
+
+    
+
 class Player(pygame.sprite.Sprite):
     def __init__(self,x,y):
         super().__init__()
@@ -26,8 +88,7 @@ class Player(pygame.sprite.Sprite):
         self.deltay = 0
         self.can_control = True
         self.battling = False
-        self.image = pygame.Surface((30,30), pygame.SRCALPHA, 32)
-        self.image.fill("Blue")
+        self.image = Main_Dude_Front
         self.image.convert_alpha()
         self.rect = self.image.get_rect(center = (self.x,self.y))
 
@@ -74,19 +135,15 @@ class Grass(Terrain):
 
     def battle_true(self,dude):
         if dude.rect.colliderect(self.rect) and dude.deltax !=0 or dude.rect.colliderect(self.rect) and dude.deltay !=0:
-            random_num = random.randint(0,100000)
+            random_num = random.randint(0,1000)
             if random_num <= dude.spawn_chance:
                 dude.spawn_chance = 0
                 print("YOO")
                 player.can_control = False
-                player.battling = True
                 return True
             else:
                 dude.spawn_chance +=1
                 return False
-
-
-
     
 
 player = Player(Screen_Width/2,Screen_Height/2)
@@ -98,6 +155,12 @@ game_sprites.add(wall)
 game_sprites.add(grass)
 game_sprites.add(player)
 
+
+initiated = False
+radius = 0
+transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
+transition_circle.fill("Black")
+
 ################################################
 
 keepGameRunning = True
@@ -106,11 +169,13 @@ while keepGameRunning:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:  
            keepGameRunning = False
+
 ################################################
 #code between hashtags is from https://www.geeksforgeeks.org/how-to-set-up-the-game-loop-in-pyggame/
+    screen.fill("Gray")   
+
     if player.can_control:    
         key = pygame.key.get_pressed()
-    screen.fill("Gray")
 
 
     if not player.battling:
@@ -119,8 +184,37 @@ while keepGameRunning:
         wall.block(player)
         grass.battle_true(player)
         game_sprites.draw(screen)
+        screen.blit(transition_circle,((Screen_Width/2)-radius,(Screen_Height/2)-radius))
 
-    
+    if not player.can_control:
+        if radius < 1000:
+            player.rect.centerx -= player.deltax
+            player.rect.centery -= player.deltay
+            radius += 5
+            transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
+            transition_circle.fill("Black")
+        else:
+            player.battling = True
+
+    if player.battling:
+        if not initiated:
+            enemy = Monsters(0,100,"Birdle",3,Birdle_Front,Birdle_Back,[1,1,1,1],[poke,None,None,None])
+            initiated = True
+        if not player.can_control:
+            enemy.load_monster()
+            if enemy.x > 650:
+                player.can_control = True
+
+        
+
+        screen.blit(enemy.front_image,(enemy.x,enemy.y))
+
+
+    #radius = 500
+    #transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
+    #transition_circle.fill("Black")
+    #screen.blit(transition_circle,(Screen_Width/2,Screen_Height/2))
+        
 
     pygame.display.flip()
 
