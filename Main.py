@@ -7,6 +7,8 @@ import time
 
 pygame.init()
 
+font=pygame.font.Font(None,30)
+
 Screen_Width = 1000
 Screen_Height = 800
 screen = pygame.display.set_mode((Screen_Width, Screen_Height))
@@ -37,9 +39,33 @@ class Moves():
 
 poke = Moves("Poke",10,0)
 
+class Textbox(pygame.sprite.Sprite):
+    def __init__(self,x,y,xsize,ysize):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.xsize = xsize
+        self.ysize = ysize
+        self.image = pygame.Surface((xsize,ysize), pygame.SRCALPHA, 32)
+        self.image.convert_alpha()
+        self.image.fill("White")
+        self.rect = self.image.get_rect(topleft = (self.x,self.y))
+
 class Text():
-    def __init__(self,text,selected,x,y):
-        pass 
+    def __init__(self,text,selected,x,y,size):
+        self.text = text
+        self.selected = selected
+
+        self.x = x
+        self.y = y
+        self.size = size
+
+    def color(self):
+        if self.selected:
+            return "Yellow"
+        else:
+            return "Black"
+
 
 
 class Monsters(pygame.sprite.Sprite):
@@ -150,11 +176,19 @@ player = Player(Screen_Width/2,Screen_Height/2)
 wall = Terrain(100,100,"Brown")
 grass = Grass(100,300,"Green")
 
+event_text = Textbox(0,650,1000,150)
+player_stats = Textbox(700,450,300,150)
+enemy_stats = Textbox(0,0,300,150)
+
 game_sprites = pygame.sprite.Group()
 game_sprites.add(wall)
 game_sprites.add(grass)
 game_sprites.add(player)
 
+textboxs_sprites = pygame.sprite.Group()
+textboxs_sprites.add(event_text)
+textboxs_sprites.add(player_stats)
+textboxs_sprites.add(enemy_stats)
 
 initiated = False
 radius = 0
@@ -202,19 +236,13 @@ while keepGameRunning:
             initiated = True
         if not player.can_control:
             enemy.load_monster()
+
             if enemy.x > 650:
                 player.can_control = True
 
         
-
+        textboxs_sprites.draw(screen)
         screen.blit(enemy.front_image,(enemy.x,enemy.y))
-
-
-    #radius = 500
-    #transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
-    #transition_circle.fill("Black")
-    #screen.blit(transition_circle,(Screen_Width/2,Screen_Height/2))
-        
 
     pygame.display.flip()
 
