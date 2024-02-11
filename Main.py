@@ -7,8 +7,6 @@ import time
 
 pygame.init()
 
-font=pygame.font.Font(None,30)
-
 Screen_Width = 1000
 Screen_Height = 800
 screen = pygame.display.set_mode((Screen_Width, Screen_Height))
@@ -29,7 +27,7 @@ Main_Dude_Front = pygame.transform.scale(Main_Dude_Front,(55,50))
 Birdle_Front = pygame.transform.scale(Birdle_Front,(300,200))
 Birdle_Front = pygame.transform.scale(Birdle_Back,(300,200))
 
-Texts = ["has appeared!",("Run","Attack"),"What do you do","'s HP: "]
+Texts = [" has appeared!",("Run","Attack"),"What do you do","'s HP: "]
 
 class Moves():
     def __init__(self,name,damage,type):
@@ -52,19 +50,27 @@ class Textbox(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft = (self.x,self.y))
 
 class Text():
-    def __init__(self,text,selected,x,y,size):
+    def __init__(self,text,x,y,size):
         self.text = text
-        self.selected = selected
+        self.selected = False
+        self.size = size
+
+        font=pygame.font.Font(None,self.size)
 
         self.x = x
         self.y = y
-        self.size = size
+        self.display_text = font.render(self.text,False,self.color())
+
 
     def color(self):
         if self.selected:
             return "Yellow"
         else:
             return "Black"
+        
+    def show_text(self):
+        screen.blit(self.display_text,(self.x,self.y))
+        print("yooooooo")
 
 
 
@@ -176,9 +182,9 @@ player = Player(Screen_Width/2,Screen_Height/2)
 wall = Terrain(100,100,"Brown")
 grass = Grass(100,300,"Green")
 
-event_text = Textbox(0,650,1000,150)
-player_stats = Textbox(700,450,300,150)
-enemy_stats = Textbox(0,0,300,150)
+event_text = Textbox(0,650,1000,200)
+player_stats = Textbox(650,400,350,200)
+enemy_stats = Textbox(0,0,350,200)
 
 game_sprites = pygame.sprite.Group()
 game_sprites.add(wall)
@@ -231,17 +237,37 @@ while keepGameRunning:
             player.battling = True
 
     if player.battling:
+
+        # immediately draw textboxes, as they are on the lowest layer below the text and graphics
+        textboxs_sprites.draw(screen)
+
         if not initiated:
+
+            #defines texts and enemys needed for battle
+
             enemy = Monsters(0,100,"Birdle",3,Birdle_Front,Birdle_Back,[1,1,1,1],[poke,None,None,None])
+
+            appear_text = Text(enemy.name+Texts[0],100,700,100)
+            enemy_name_text = Text(enemy.name,20,20,50)
+
+
             initiated = True
+
         if not player.can_control:
+            # transition from overworld to battle, enemy moves on screen and text says they have appeared
             enemy.load_monster()
+            appear_text.show_text()
 
             if enemy.x > 650:
                 player.can_control = True
 
+        else:
+            pass
+            #BATTLE LOOP
+
+
+
         
-        textboxs_sprites.draw(screen)
         screen.blit(enemy.front_image,(enemy.x,enemy.y))
 
     pygame.display.flip()
