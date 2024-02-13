@@ -7,6 +7,8 @@ import time
 
 pygame.init()
 
+e = False
+
 Screen_Width = 1000
 Screen_Height = 800
 screen = pygame.display.set_mode((Screen_Width, Screen_Height))
@@ -27,15 +29,16 @@ Main_Dude_Front = pygame.transform.scale(Main_Dude_Front,(55,50))
 Birdle_Front = pygame.transform.scale(Birdle_Front,(300,200))
 Birdle_Front = pygame.transform.scale(Birdle_Back,(300,200))
 
-Texts = [" has appeared!",("Run","Attack"),"What do you do","'s HP: "]
+Texts = [" has appeared!",["Run","Attack","Catch","Change Monster"],"What do you do","'s HP: "]
 
-class Moves():
-    def __init__(self,name,damage,type):
-        self.name = name
-        self.damage = damage
-        self.type = type
+#class Moves():
+    #def __init__(self,name,damage,type):
+        #self.name = name
+        #self.damage = damage
+        #self.type = type
 
-poke = Moves("Poke",10,0)
+#poke = Moves("Poke",10,0)
+#slap = Moves("Poke",30,0)
 
 class Textbox(pygame.sprite.Sprite):
     def __init__(self,x,y,xsize,ysize):
@@ -50,31 +53,35 @@ class Textbox(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft = (self.x,self.y))
 
 class Text():
-    def __init__(self,text,x,y,size):
+    def __init__(self,text,x,y,size,index):
         self.text = text
-        self.selected = False
         self.size = size
+        self.index = index
 
-        font=pygame.font.Font(None,self.size)
+        self.font=pygame.font.Font(None,self.size)
 
         self.x = x
         self.y = y
-        self.display_text = font.render(self.text,False,self.color())
+        self.display_text = self.font.render(self.text,False,self.color(player))
 
 
-    def color(self):
-        if self.selected:
+    def color(self,bro):
+        if self.index == bro.text_index:
             return "Yellow"
         else:
             return "Black"
         
+        
     def show_text(self):
         screen.blit(self.display_text,(self.x,self.y))
+
+    def action(self):
+        pass
 
 
 
 class Monsters(pygame.sprite.Sprite):
-    def __init__(self,x,y,name,lv,front_image,back_image,stats,moves):
+    def __init__(self,x,y,name,lv,front_image,back_image,stats):
         super().__init__()
 
         self.x = x
@@ -90,18 +97,11 @@ class Monsters(pygame.sprite.Sprite):
         self.hp_ratio = stats[0]
         self.attack_ratio = stats[1]
         self.defense_ratio = stats[2]
-        self.special_ratio = stats[3]
 
         self.hp = self.hp_ratio * self.lv
         self.maxhp = self.hp
         self.attack = self.attack_ratio * self.lv
         self.defense = self.defense_ratio * self.lv
-        self.special = self.special_ratio * self.lv
-
-        self.move1 = moves[0]
-        self.move2 = moves[1]
-        self.move3 = moves[2]
-        self.move4 = moves[3]
 
     def load_monster(self):
         self.x += 5
@@ -112,13 +112,22 @@ class Monsters(pygame.sprite.Sprite):
 class Player(pygame.sprite.Sprite):
     def __init__(self,x,y):
         super().__init__()
+        self.text_index = 0
+
         self.x = x
         self.y = y
+
+        self.monsters = []
+
+        self.your_turn = True
         self.spawn_chance = 0
+
         self.deltax = 0
         self.deltay = 0
+
         self.can_control = True
         self.battling = False
+
         self.image = Main_Dude_Front
         self.image.convert_alpha()
         self.rect = self.image.get_rect(center = (self.x,self.y))
@@ -137,6 +146,24 @@ class Player(pygame.sprite.Sprite):
             self.deltay = 4
         else:
             self.deltay = 0
+
+    def text_move(self):
+        global e
+        if key[pygame.K_LEFT] and not e:
+            self.text_index -= 1
+            e = True
+        elif key[pygame.K_RIGHT] and not e:
+            self.text_index += 1
+            e = True
+
+        if not key[pygame.K_LEFT] and not key[pygame.K_RIGHT]:
+            e = False
+
+        if self.text_index > 3:
+            self.text_index = 3
+        elif self.text_index < 0:
+            self.text_index = 0
+        
 
     def update_position(self):
         self.rect.centerx += self.deltax
@@ -176,33 +203,33 @@ class Grass(Terrain):
                 dude.spawn_chance +=1
                 return False
     
+if True:
+    player = Player(Screen_Width/2,Screen_Height/2)
+    wall = Terrain(100,100,"Brown")
+    grass = Grass(100,300,"Green")
 
-player = Player(Screen_Width/2,Screen_Height/2)
-wall = Terrain(100,100,"Brown")
-grass = Grass(100,300,"Green")
+    event_text = Textbox(0,650,1000,200)
+    player_stats = Textbox(650,400,350,200)
+    enemy_stats = Textbox(0,0,350,200)
 
-event_text = Textbox(0,650,1000,200)
-player_stats = Textbox(650,400,350,200)
-enemy_stats = Textbox(0,0,350,200)
+    game_sprites = pygame.sprite.Group()
+    game_sprites.add(wall)
+    game_sprites.add(grass)
+    game_sprites.add(player)
 
-game_sprites = pygame.sprite.Group()
-game_sprites.add(wall)
-game_sprites.add(grass)
-game_sprites.add(player)
+    textboxs_sprites = pygame.sprite.Group()
+    textboxs_sprites.add(event_text)
+    textboxs_sprites.add(player_stats)
+    textboxs_sprites.add(enemy_stats)
 
-textboxs_sprites = pygame.sprite.Group()
-textboxs_sprites.add(event_text)
-textboxs_sprites.add(player_stats)
-textboxs_sprites.add(enemy_stats)
-
-initiated = False
-radius = 0
-transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
-transition_circle.fill("Black")
+    initiated = False
+    radius = 0
+    transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
+    transition_circle.fill("Black")
 
 ################################################
 
-keepGameRunning = True
+    keepGameRunning = True
 
 while keepGameRunning:
     for event in pygame.event.get():
@@ -244,11 +271,17 @@ while keepGameRunning:
 
             #defines texts and enemys needed for battle
 
-            enemy = Monsters(0,100,"Birdle",3,Birdle_Front,Birdle_Back,[1,1,1,1],[poke,None,None,None])
+            enemy = Monsters(0,100,"Birdle",random.randint(2,5),Birdle_Front,Birdle_Back,[1,1,1,1])
 
-            appear_text = Text(enemy.name+Texts[0],100,700,100)
-            enemy_name_text = Text(enemy.name,20,20,50)
-            enemy_lv_text = Text("Lv: " + str(enemy.lv), 180, 20, 50)
+            appear_text = Text(enemy.name+Texts[0],100,700,100,None)
+            enemy_name_text = Text(enemy.name,20,20,50,None)
+            enemy_lv_text = Text("Lv: " + str(enemy.lv), 180, 20, 50,None)
+            attack_text = Text("Attack",100,700,50,0)
+            run_text = Text("Run",300,700,50,1)
+            catch_text = Text("Catch",450,700,50,2)
+            change_text = Text("Change Monster",650,700,50,3)
+
+            actions_list = [attack_text,run_text,catch_text,change_text]
 
 
             initiated = True
@@ -265,6 +298,14 @@ while keepGameRunning:
             enemy_name_text.show_text()
             enemy_lv_text.show_text()
             #BATTLE LOOP
+            if player.your_turn:
+
+                player.text_move()
+
+                for text in actions_list:
+                    text.display_text = text.font.render(text.text,False,text.color(player)) ##text.text IK IK
+                    text.show_text()
+
 
 
 
