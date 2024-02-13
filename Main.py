@@ -70,7 +70,6 @@ class Text():
         
     def show_text(self):
         screen.blit(self.display_text,(self.x,self.y))
-        print("yooooooo")
 
 
 
@@ -249,6 +248,7 @@ while keepGameRunning:
 
             appear_text = Text(enemy.name+Texts[0],100,700,100)
             enemy_name_text = Text(enemy.name,20,20,50)
+            enemy_lv_text = Text("Lv: " + str(enemy.lv), 180, 20, 50)
 
 
             initiated = True
@@ -262,7 +262,8 @@ while keepGameRunning:
                 player.can_control = True
 
         else:
-            pass
+            enemy_name_text.show_text()
+            enemy_lv_text.show_text()
             #BATTLE LOOP
 
 
