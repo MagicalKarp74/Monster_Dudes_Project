@@ -21,13 +21,13 @@ FPS = 60
 
 Main_Dude_Front = pygame.image.load("Images/Main_Dude_Front.png")
 
-Birdle_Front = pygame.image.load("Images/Birdle_Back.png")
-Birdle_Back = pygame.image.load("Images/Birdle_Front.png")
+Birdle_Front = pygame.image.load("Images/Birdle_Front.png")
+Birdle_Back = pygame.image.load("Images/Birdle_Back.png")
 
 Main_Dude_Front = pygame.transform.scale(Main_Dude_Front,(55,50))
 
 Birdle_Front = pygame.transform.scale(Birdle_Front,(300,200))
-Birdle_Front = pygame.transform.scale(Birdle_Back,(300,200))
+Birdle_Back = pygame.transform.scale(Birdle_Back,(300,200))
 
 Texts = [" has appeared!",["Run","Attack","Catch","Change Monster"],"What do you do","'s HP: "]
 
@@ -38,7 +38,7 @@ Texts = [" has appeared!",["Run","Attack","Catch","Change Monster"],"What do you
         #self.type = type
 
 #poke = Moves("Poke",10,0)
-#slap = Moves("Poke",30,0)
+#slap = Moves("Slap",30,0)
 
 class Textbox(pygame.sprite.Sprite):
     def __init__(self,x,y,xsize,ysize):
@@ -105,6 +105,16 @@ class Monsters(pygame.sprite.Sprite):
 
     def load_monster(self):
         self.x += 5
+
+    def display_monster(self,bro):
+        if self in bro.monsters:
+            self.x = 100
+            self.y = 400
+            screen.blit(bro.monsters[bro.current_monster].back_image,(self.x,self.y))
+        else:
+            screen.blit(self.front_image,(self.x,self.y))
+
+Birdle = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[1,1,1,1])
         
 
     
@@ -117,7 +127,8 @@ class Player(pygame.sprite.Sprite):
         self.x = x
         self.y = y
 
-        self.monsters = []
+        self.monsters = [Birdle]
+        self.current_monster = 0
 
         self.your_turn = True
         self.spawn_chance = 0
@@ -131,6 +142,10 @@ class Player(pygame.sprite.Sprite):
         self.image = Main_Dude_Front
         self.image.convert_alpha()
         self.rect = self.image.get_rect(center = (self.x,self.y))
+
+    def display_monster(self):
+        screen.blit(self.monsters[self.current_monster].back_image,(100,500))
+
 
     def move(self):
         if key[pygame.K_LEFT]:
@@ -274,8 +289,10 @@ while keepGameRunning:
             enemy = Monsters(0,100,"Birdle",random.randint(2,5),Birdle_Front,Birdle_Back,[1,1,1,1])
 
             appear_text = Text(enemy.name+Texts[0],100,700,100,None)
+            enemy_hp_text = Text(str(enemy.hp)+" / "+ str(enemy.maxhp)+" HP",100,80,80,None)
             enemy_name_text = Text(enemy.name,20,20,50,None)
             enemy_lv_text = Text("Lv: " + str(enemy.lv), 180, 20, 50,None)
+
             attack_text = Text("Attack",100,700,50,0)
             run_text = Text("Run",300,700,50,1)
             catch_text = Text("Catch",450,700,50,2)
@@ -297,20 +314,24 @@ while keepGameRunning:
         else:
             enemy_name_text.show_text()
             enemy_lv_text.show_text()
+            enemy_hp_text.display_text = enemy_hp_text.font.render(enemy_hp_text.text,False,enemy_hp_text.color(player)) ##text.text IK IK
+            enemy_hp_text.show_text()
+
             #BATTLE LOOP
             if player.your_turn:
 
                 player.text_move()
+                player.monsters[player.current_monster].display_monster(player)
 
-                for text in actions_list:
-                    text.display_text = text.font.render(text.text,False,text.color(player)) ##text.text IK IK
-                    text.show_text()
+                for action in actions_list:
+                    action.display_text = action.font.render(action.text,False,action.color(player)) ##text.text IK IK
+                    action.show_text()
 
 
 
 
         
-        screen.blit(enemy.front_image,(enemy.x,enemy.y))
+        enemy.display_monster(player)
 
     pygame.display.flip()
 
