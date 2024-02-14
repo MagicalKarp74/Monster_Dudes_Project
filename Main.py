@@ -289,7 +289,6 @@ while keepGameRunning:
             enemy = Monsters(0,100,"Birdle",random.randint(2,5),Birdle_Front,Birdle_Back,[1,1,1,1])
 
             appear_text = Text(enemy.name+Texts[0],100,700,100,None)
-            enemy_hp_text = Text(str(enemy.hp)+" / "+ str(enemy.maxhp)+" HP",100,80,80,None)
             enemy_name_text = Text(enemy.name,20,20,50,None)
             enemy_lv_text = Text("Lv: " + str(enemy.lv), 180, 20, 50,None)
 
@@ -314,8 +313,7 @@ while keepGameRunning:
         else:
             enemy_name_text.show_text()
             enemy_lv_text.show_text()
-            enemy_hp_text.display_text = enemy_hp_text.font.render(enemy_hp_text.text,False,enemy_hp_text.color(player)) ##text.text IK IK
-            enemy_hp_text.show_text()
+
 
             #BATTLE LOOP
             if player.your_turn:
@@ -326,6 +324,7 @@ while keepGameRunning:
                 for action in actions_list:
                     action.display_text = action.font.render(action.text,False,action.color(player)) ##text.text IK IK
                     action.show_text()
+
 
 
 
