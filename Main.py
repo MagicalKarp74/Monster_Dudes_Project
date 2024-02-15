@@ -114,6 +114,13 @@ class Monsters(pygame.sprite.Sprite):
         else:
             screen.blit(self.front_image,(self.x,self.y))
 
+    def display_hp(self,bro):
+        if self in bro.monsters:
+            self.hp_text = Text("HP: "+str(self.hp) + "/"+str(self.maxhp),700,500,50,5)
+        else:
+            self.hp_text = Text("HP: "+str(self.hp) + "/"+str(self.maxhp),20,150,50,5)
+        self.hp_text.show_text()
+
 Birdle = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[1,1,1,1])
         
 
@@ -143,8 +150,6 @@ class Player(pygame.sprite.Sprite):
         self.image.convert_alpha()
         self.rect = self.image.get_rect(center = (self.x,self.y))
 
-    def display_monster(self):
-        screen.blit(self.monsters[self.current_monster].back_image,(100,500))
 
 
     def move(self):
@@ -185,14 +190,16 @@ class Player(pygame.sprite.Sprite):
         self.rect.centery += self.deltay
 
 class Terrain(pygame.sprite.Sprite):
-    def __init__(self,x,y,color):
+    def __init__(self,x,y,xsize,ysize,color):
         super().__init__()
         self.x = x
         self.y = y
-        self.image = pygame.Surface((800,80), pygame.SRCALPHA, 32)
+        self.xsize = xsize
+        self.ysize = ysize
+        self.image = pygame.Surface((self.xsize,self.ysize), pygame.SRCALPHA, 32)
         self.image.fill(color)
         self.image.convert_alpha()
-        self.rect = self.image.get_rect(center =(self.x,self.y))
+        self.rect = self.image.get_rect(topleft =(self.x,self.y))
 
     def display(self):
         screen.blit(self.image,(self.x,self.y))
@@ -203,8 +210,8 @@ class Terrain(pygame.sprite.Sprite):
             dude.rect.centery -= dude.deltay
 
 class Grass(Terrain):
-    def __init__(self,x,y,color):
-        super(Grass,self).__init__(x,y,color)
+    def __init__(self,x,y,xsize,ysize,color):
+        super(Grass,self).__init__(x,y,xsize,ysize,color)
 
     def battle_true(self,dude):
         if dude.rect.colliderect(self.rect) and dude.deltax !=0 or dude.rect.colliderect(self.rect) and dude.deltay !=0:
@@ -217,25 +224,47 @@ class Grass(Terrain):
             else:
                 dude.spawn_chance +=1
                 return False
-    
+            
+
+def transition_to_battle(bro):
+    global radius
+    global transition_circle
+    if radius < 1000:
+            bro.rect.centerx -= bro.deltax
+            bro.rect.centery -= bro.deltay
+            radius += 5
+            transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
+            transition_circle.fill("Black")
+    else:
+        bro.battling = True
+
 if True:
     player = Player(Screen_Width/2,Screen_Height/2)
-    wall = Terrain(100,100,"Brown")
-    grass = Grass(100,300,"Green")
+    wall_top = Terrain(0,0,Screen_Width,50,"Brown")
+    wall_left = Terrain(0,0,50,Screen_Height,"Brown")
+    wall_bottom = Terrain(0,Screen_Height-50,Screen_Width,50,"Brown")
+    wall_right = Terrain(Screen_Width-50,0,50,Screen_Height,"Brown")
+    grass = Grass(550,350,Screen_Height-400,Screen_Height-400,"Green")
 
     event_text = Textbox(0,650,1000,200)
     player_stats = Textbox(650,400,350,200)
     enemy_stats = Textbox(0,0,350,200)
 
-    game_sprites = pygame.sprite.Group()
-    game_sprites.add(wall)
-    game_sprites.add(grass)
-    game_sprites.add(player)
-
     textboxs_sprites = pygame.sprite.Group()
     textboxs_sprites.add(event_text)
     textboxs_sprites.add(player_stats)
     textboxs_sprites.add(enemy_stats)
+
+    game_sprites = pygame.sprite.Group()
+    wall_sprites = pygame.sprite.Group()
+
+    game_sprites.add(grass)
+    game_sprites.add(player)
+
+    wall_sprites.add(wall_top)
+    wall_sprites.add(wall_left)
+    wall_sprites.add(wall_bottom)
+    wall_sprites.add(wall_right)
 
     initiated = False
     radius = 0
@@ -245,6 +274,17 @@ if True:
 ################################################
 
     keepGameRunning = True
+
+
+def overworld_loop():
+        player.move()
+        player.update_position()
+        for wall in wall_sprites:
+            wall.block(player)
+        wall_sprites.draw(screen)
+        grass.battle_true(player)
+        game_sprites.draw(screen)
+        screen.blit(transition_circle,((Screen_Width/2)-radius,(Screen_Height/2)-radius))
 
 while keepGameRunning:
     for event in pygame.event.get():
@@ -258,24 +298,11 @@ while keepGameRunning:
     if player.can_control:    
         key = pygame.key.get_pressed()
 
-
     if not player.battling:
-        player.move()
-        player.update_position()
-        wall.block(player)
-        grass.battle_true(player)
-        game_sprites.draw(screen)
-        screen.blit(transition_circle,((Screen_Width/2)-radius,(Screen_Height/2)-radius))
+        overworld_loop()
 
     if not player.can_control:
-        if radius < 1000:
-            player.rect.centerx -= player.deltax
-            player.rect.centery -= player.deltay
-            radius += 5
-            transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
-            transition_circle.fill("Black")
-        else:
-            player.battling = True
+        transition_to_battle(player)
 
     if player.battling:
 
@@ -313,22 +340,25 @@ while keepGameRunning:
         else:
             enemy_name_text.show_text()
             enemy_lv_text.show_text()
+            player.monsters[player.current_monster].display_monster(player)
+            player.monsters[player.current_monster].display_hp(player)
+            enemy.display_hp(player)
+
 
 
             #BATTLE LOOP
             if player.your_turn:
 
                 player.text_move()
-                player.monsters[player.current_monster].display_monster(player)
 
                 for action in actions_list:
-                    action.display_text = action.font.render(action.text,False,action.color(player)) ##text.text IK IK
+                    action.display_text = action.font.render(action.text,False,action.color(player))
                     action.show_text()
 
 
 
 
-        
+        # enemy is displayed no matter the if else condition because he's there for the opening transition
         enemy.display_monster(player)
 
     pygame.display.flip()
