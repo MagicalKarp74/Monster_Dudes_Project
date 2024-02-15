@@ -5,6 +5,10 @@ from pygame import mixer
 import random
 import time
 
+start = time.time()
+
+new_start = time.time()
+
 pygame.init()
 
 e = False
@@ -75,8 +79,7 @@ class Text():
     def show_text(self):
         screen.blit(self.display_text,(self.x,self.y))
 
-    def action(self):
-        pass
+
 
 
 
@@ -116,10 +119,34 @@ class Monsters(pygame.sprite.Sprite):
 
     def display_hp(self,bro):
         if self in bro.monsters:
-            self.hp_text = Text("HP: "+str(self.hp) + "/"+str(self.maxhp),700,500,50,5)
+            self.hp_text = Text("HP: "+str(self.hp) + "/"+str(self.maxhp),680,520,50,5)
         else:
             self.hp_text = Text("HP: "+str(self.hp) + "/"+str(self.maxhp),20,150,50,5)
         self.hp_text.show_text()
+
+    def display_name_lv(self,bro):
+        if self in bro.monsters:
+            self.info_text = Text(str(self.name)+"    lv: "+str(self.lv),680,420,50,5)
+        else:
+            self.info_text = Text(str(self.name)+"    lv: "+str(self.lv),20,20,50,5)
+        self.info_text.show_text()
+
+    def display_all_info(self,bro):
+        self.display_hp(bro)
+        self.display_name_lv(bro)
+
+    def attack_opponent(self,opponent):
+        opponent.hp -= self.attack
+
+    def enemy_action(self,bro):
+        if random.randint(0,1) == 0:
+            self.attack_opponent(bro.monsters[bro.current_monster])
+            bro.event_text.text = "enemy"+str(self.name)+"attacked"+str(bro.monsters[bro.current_monster].name)+"and did"+str(self.attack)+"damage"
+        else:
+            bro.event_text.text = "enemy"+str(self.name)+" is chillin"
+
+
+
 
 Birdle = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[1,1,1,1])
         
@@ -145,6 +172,8 @@ class Player(pygame.sprite.Sprite):
 
         self.can_control = True
         self.battling = False
+
+        self.event_text = " "
 
         self.image = Main_Dude_Front
         self.image.convert_alpha()
@@ -188,6 +217,24 @@ class Player(pygame.sprite.Sprite):
     def update_position(self):
         self.rect.centerx += self.deltax
         self.rect.centery += self.deltay
+
+    def action(self,opponent):
+        if key[pygame.K_z]:
+            if self.text_index == 0:
+                self.monsters[self.current_monster].attack_opponent(opponent)
+                self.event_text.text = str(self.monsters[self.current_monster].name)+" attacked "+str(opponent.name)+" and did " +str(self.monsters[self.current_monster].attack)+" damage!"
+                #self.event_text.show_text()
+                new_start = time.time()
+                self.your_turn = False
+
+            elif self.text_index == 1:
+                self.your_turn = False
+
+            elif self.text_index == 2:
+                self.your_turn = False
+
+            else:
+                self.your_turn = False
 
 class Terrain(pygame.sprite.Sprite):
     def __init__(self,x,y,xsize,ysize,color):
@@ -240,6 +287,7 @@ def transition_to_battle(bro):
 
 if True:
     player = Player(Screen_Width/2,Screen_Height/2)
+    player.event_text = Text(" ",100,700,50,5)
     wall_top = Terrain(0,0,Screen_Width,50,"Brown")
     wall_left = Terrain(0,0,50,Screen_Height,"Brown")
     wall_bottom = Terrain(0,Screen_Height-50,Screen_Width,50,"Brown")
@@ -290,6 +338,8 @@ while keepGameRunning:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:  
            keepGameRunning = False
+    timer = time.time() - start
+    print(round(timer))
 
 ################################################
 #code between hashtags is from https://www.geeksforgeeks.org/how-to-set-up-the-game-loop-in-pyggame/
@@ -316,8 +366,6 @@ while keepGameRunning:
             enemy = Monsters(0,100,"Birdle",random.randint(2,5),Birdle_Front,Birdle_Back,[1,1,1,1])
 
             appear_text = Text(enemy.name+Texts[0],100,700,100,None)
-            enemy_name_text = Text(enemy.name,20,20,50,None)
-            enemy_lv_text = Text("Lv: " + str(enemy.lv), 180, 20, 50,None)
 
             attack_text = Text("Attack",100,700,50,0)
             run_text = Text("Run",300,700,50,1)
@@ -338,11 +386,10 @@ while keepGameRunning:
                 player.can_control = True
 
         else:
-            enemy_name_text.show_text()
-            enemy_lv_text.show_text()
+            enemy.display_all_info(player)
+            player.monsters[player.current_monster].display_all_info(player)
             player.monsters[player.current_monster].display_monster(player)
-            player.monsters[player.current_monster].display_hp(player)
-            enemy.display_hp(player)
+
 
 
 
@@ -350,10 +397,20 @@ while keepGameRunning:
             if player.your_turn:
 
                 player.text_move()
+                player.action(enemy)
+                current_timer = timer
 
                 for action in actions_list:
                     action.display_text = action.font.render(action.text,False,action.color(player))
                     action.show_text()
+
+            else:
+                player.event_text.show_text()
+                #time.sleep(2)
+                enemy.enemy_action(player)
+                #time.sleep(2)
+                player.your_turn = True
+
 
 
 
