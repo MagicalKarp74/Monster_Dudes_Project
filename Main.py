@@ -38,7 +38,7 @@ Birdle_Back = pygame.transform.scale(Birdle_Back,(300,200))
 Angry_Rat_Front = pygame.transform.scale(Angry_Rat_Front,(300,200))
 Angry_Rat_Back = pygame.transform.scale(Angry_Rat_Back,(300,200))
 
-Texts = [" has appeared!",["Run","Attack","Catch","Change Monster"],"What do you do","'s HP: "]
+Texts = [" has appeared!",["Run","Attack","Catch","Change Monster"]]
 
 #class Moves():
     #def __init__(self,name,damage,type):
@@ -167,10 +167,15 @@ class Player(pygame.sprite.Sprite):
         self.x = x
         self.y = y
 
+        self.save_x = self.x
+        self.save_y = self.y
+
         self.running = False
 
         self.monsters = [Angry_rat,Birdle]
         self.curr_mon = 0
+
+        self.caught_enemy = False
 
         self.your_turn = True
         self.spawn_chance = 0
@@ -244,10 +249,17 @@ class Player(pygame.sprite.Sprite):
                     self.your_turn = False
 
             elif self.text_index == 2: #catch
-                self.your_turn = False
+                if random.randint(0,1) == 0:
+                    self.event_text = Text("You tried to catch "+str(opponent.name)+" and succeeded!",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index)
+                    self.caught_enemy = True
+                    self.running = True
+                else:
+                    self.event_text = Text("You tried to catch "+str(opponent.name)+" and failed :(",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index)
+                    self.caught_enemy = False
 
             elif self.text_index == 3: #change monster
                 self.your_turn = False
+
             else:
                 pass
 
@@ -288,6 +300,8 @@ class Grass(Terrain):
                 dude.spawn_chance = 0
                 print("YOO")
                 player.can_control = False
+                player.save_x = player.rect.x
+                player.save_y = player.rect.y
                 return True
             else:
                 dude.spawn_chance +=1
@@ -353,14 +367,11 @@ def overworld_loop():
     grass.battle_true(player)
     game_sprites.draw(screen)
     screen.blit(transition_circle,((Screen_Width/2)-radius,(Screen_Height/2)-radius))
-    #pygame.mixer.music.play(-1)
-    #print("Overworld")
 
+pygame.mixer.music.play(-1)
 ################################################
 
 keepGameRunning = True
-
-pygame.mixer.music.play(-1)
 
 while keepGameRunning:
     for event in pygame.event.get():
@@ -407,7 +418,6 @@ while keepGameRunning:
             initiated = True
 
         if not player.can_control:
-            #print("YOOO")
             # transition from overworld to battle, enemy moves on screen and text says they have appeared
             enemy.load_monster()
             appear_text.show_text()
@@ -444,6 +454,14 @@ while keepGameRunning:
                         radius = 0
                         transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
                         player.your_turn = True
+                        player.rect.x = player.save_x
+                        player.rect.y = player.save_y
+                        player.running = False
+                        if player.caught_enemy:
+                            player.monsters.append(enemy)
+                        player.caught_enemy = False
+
+
                     enemy.enemy_action(player)
                     annoying_flag = True
                     
