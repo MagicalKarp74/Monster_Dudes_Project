@@ -5,9 +5,7 @@ from pygame import mixer
 import random
 import time
 
-start = time.time()
-
-new_start = time.time()
+radius = 0
 
 pygame.init()
 
@@ -20,18 +18,25 @@ clock = pygame.time.Clock()
 
 FPS = 60
 
-annoying_flag = False
+pygame.mixer.music.load("Music/Overworld.wav")
 
+annoying_flag = False
 
 Main_Dude_Front = pygame.image.load("Images/Main_Dude_Front.png")
 
 Birdle_Front = pygame.image.load("Images/Birdle_Front.png")
 Birdle_Back = pygame.image.load("Images/Birdle_Back.png")
 
+Angry_Rat_Front = pygame.image.load("Images/Angry_Rat_Front.png")
+Angry_Rat_Back = pygame.image.load("Images/Angry_Rat_Back.png")
+
 Main_Dude_Front = pygame.transform.scale(Main_Dude_Front,(55,50))
 
 Birdle_Front = pygame.transform.scale(Birdle_Front,(300,200))
 Birdle_Back = pygame.transform.scale(Birdle_Back,(300,200))
+
+Angry_Rat_Front = pygame.transform.scale(Angry_Rat_Front,(300,200))
+Angry_Rat_Back = pygame.transform.scale(Angry_Rat_Back,(300,200))
 
 Texts = [" has appeared!",["Run","Attack","Catch","Change Monster"],"What do you do","'s HP: "]
 
@@ -148,7 +153,8 @@ class Monsters(pygame.sprite.Sprite):
 
 
 
-Birdle = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[1,1,1,1])
+Birdle = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[4,2,3,1])
+Angry_rat = Monsters(0,100,"Angry Rat",5,Angry_Rat_Front,Angry_Rat_Back,[3,5,2,1])
         
 
     
@@ -161,7 +167,9 @@ class Player(pygame.sprite.Sprite):
         self.x = x
         self.y = y
 
-        self.monsters = [Birdle]
+        self.running = False
+
+        self.monsters = [Angry_rat,Birdle]
         self.curr_mon = 0
 
         self.your_turn = True
@@ -225,13 +233,20 @@ class Player(pygame.sprite.Sprite):
                 new_start = time.time()
                 self.your_turn = False
 
-            elif self.text_index == 1:
+            elif self.text_index == 1: #run
+                if random.randint(0,1) == 0:
+                    self.event_text = Text("You ran away (like a stupid dum dum coward )",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index)
+                    self.your_turn = False
+                    self.running = True
+
+                else:
+                    self.event_text = Text("You tried to run but failed :(",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index)
+                    self.your_turn = False
+
+            elif self.text_index == 2: #catch
                 self.your_turn = False
 
-            elif self.text_index == 2:
-                self.your_turn = False
-
-            elif self.text_index == 3:
+            elif self.text_index == 3: #change monster
                 self.your_turn = False
             else:
                 pass
@@ -290,6 +305,8 @@ def transition_to_battle(bro):
             transition_circle.fill("Black")
     else:
         bro.battling = True
+        radius = 0
+        transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
 
 if True:
     player = Player(Screen_Width/2,Screen_Height/2)
@@ -327,18 +344,23 @@ if True:
 
 
 def overworld_loop():
-        player.move()
-        player.update_position()
-        for wall in wall_sprites:
-            wall.block(player)
-        wall_sprites.draw(screen)
-        grass.battle_true(player)
-        game_sprites.draw(screen)
-        screen.blit(transition_circle,((Screen_Width/2)-radius,(Screen_Height/2)-radius))
+    global radius
+    player.move()
+    player.update_position()
+    for wall in wall_sprites:
+        wall.block(player)
+    wall_sprites.draw(screen)
+    grass.battle_true(player)
+    game_sprites.draw(screen)
+    screen.blit(transition_circle,((Screen_Width/2)-radius,(Screen_Height/2)-radius))
+    #pygame.mixer.music.play(-1)
+    #print("Overworld")
 
 ################################################
 
 keepGameRunning = True
+
+pygame.mixer.music.play(-1)
 
 while keepGameRunning:
     for event in pygame.event.get():
@@ -366,8 +388,9 @@ while keepGameRunning:
         if not initiated:
 
             #defines texts and enemys needed for battle
+            print("initating")
 
-            enemy = Monsters(0,100,"Birdle",random.randint(2,5),Birdle_Front,Birdle_Back,[1,1,1,1])
+            enemy = Monsters(0,100,"Birdle",random.randint(2,5),Birdle_Front,Birdle_Back,[4,2,3,1])
 
             appear_text = Text(enemy.name+Texts[0],100,700,100,None)
 
@@ -384,6 +407,7 @@ while keepGameRunning:
             initiated = True
 
         if not player.can_control:
+            #print("YOOO")
             # transition from overworld to battle, enemy moves on screen and text says they have appeared
             enemy.load_monster()
             appear_text.show_text()
@@ -401,7 +425,6 @@ while keepGameRunning:
 
             #BATTLE LOOP
             if player.your_turn:
-                print("yasss")
 
                 player.text_move(actions_list)
                 player.action(enemy)
@@ -412,12 +435,15 @@ while keepGameRunning:
                     action.show_text()
 
             else:
-                #time.sleep(.5)
-                #event_text_list = [player.event_text]
-                print(annoying_flag)
                 player.event_text.show_text()
                 if player.move_next_text_box() and not annoying_flag:
-                    print("it has ran")
+                    if player.running:
+                        player.battling = False
+                        player.can_control = True
+                        initiated = False
+                        radius = 0
+                        transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
+                        player.your_turn = True
                     enemy.enemy_action(player)
                     annoying_flag = True
                     
@@ -426,7 +452,6 @@ while keepGameRunning:
                     if player.move_next_text_box():
                         player.your_turn = True
                         annoying_flag = False
-                        print("asdasdasdasdasdasd")
 
                 #player.text_move(actions_list)
                 #player.action(enemy)
@@ -442,6 +467,7 @@ while keepGameRunning:
         # enemy is displayed no matter the if else condition because he's there for the opening transition
         enemy.display_monster(player)
     past_key = key
+    print(str(player.rect.x) +","+str(player.rect.y))
     pygame.display.flip()
 
 
