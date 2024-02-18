@@ -9,6 +9,8 @@ radius = 0
 
 pygame.init()
 
+font=pygame.font.Font(None,50)
+
 Screen_Width = 1000
 Screen_Height = 800
 screen = pygame.display.set_mode((Screen_Width, Screen_Height))
@@ -30,6 +32,9 @@ Birdle_Back = pygame.image.load("Images/Birdle_Back.png")
 Angry_Rat_Front = pygame.image.load("Images/Angry_Rat_Front.png")
 Angry_Rat_Back = pygame.image.load("Images/Angry_Rat_Back.png")
 
+Monke_Front = pygame.image.load("Images/Monke_Front.png")
+Monke_Back = pygame.image.load("Images/Monke_Back.png")
+
 Main_Dude_Front = pygame.transform.scale(Main_Dude_Front,(55,50))
 
 Birdle_Front = pygame.transform.scale(Birdle_Front,(300,200))
@@ -37,6 +42,10 @@ Birdle_Back = pygame.transform.scale(Birdle_Back,(300,200))
 
 Angry_Rat_Front = pygame.transform.scale(Angry_Rat_Front,(300,200))
 Angry_Rat_Back = pygame.transform.scale(Angry_Rat_Back,(300,200))
+
+Monke_Front = pygame.transform.scale(Monke_Front,(300,200))
+Monke_Back = pygame.transform.scale(Monke_Back,(300,200))
+
 
 Texts = [" has appeared!",["Run","Attack","Catch","Change Monster"]]
 
@@ -155,6 +164,7 @@ class Monsters(pygame.sprite.Sprite):
 
 Birdle = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[4,2,3,1])
 Angry_rat = Monsters(0,100,"Angry Rat",5,Angry_Rat_Front,Angry_Rat_Back,[3,5,2,1])
+Monke = Monsters(0,100,"Monke",5,Monke_Front,Monke_Back,[4,2,2,2])
         
 
     
@@ -172,7 +182,7 @@ class Player(pygame.sprite.Sprite):
 
         self.running = False
 
-        self.monsters = [Angry_rat,Birdle]
+        self.monsters = [Monke,Angry_rat,Birdle]
         self.curr_mon = 0
 
         self.caught_enemy = False
@@ -269,6 +279,16 @@ class Player(pygame.sprite.Sprite):
         else:
             return False
 
+    def show_team(self):
+        y = 300
+        if key[pygame.K_z]:
+            screen.blit(player_team.image,(player_team.x,player_team.y))
+            for monster in self.monsters:
+                text = font.render(str(monster.name)+"      hp: "+str(monster.maxhp)+"/"+str(monster.hp),False,"Black")
+                screen.blit(text,(Screen_Width/3,y))
+                y += 50
+
+
 class Terrain(pygame.sprite.Sprite):
     def __init__(self,x,y,xsize,ysize,color):
         super().__init__()
@@ -335,6 +355,8 @@ if True:
     player_stats = Textbox(650,400,350,200)
     enemy_stats = Textbox(0,0,350,200)
 
+    player_team = Textbox(250,150,500,500)
+
     textboxs_sprites = pygame.sprite.Group()
     textboxs_sprites.add(event_text)
     textboxs_sprites.add(player_stats)
@@ -366,6 +388,7 @@ def overworld_loop():
     wall_sprites.draw(screen)
     grass.battle_true(player)
     game_sprites.draw(screen)
+    player.show_team()
     screen.blit(transition_circle,((Screen_Width/2)-radius,(Screen_Height/2)-radius))
 
 pygame.mixer.music.play(-1)
@@ -401,7 +424,7 @@ while keepGameRunning:
             #defines texts and enemys needed for battle
             print("initating")
 
-            enemy = Monsters(0,100,"Birdle",random.randint(2,5),Birdle_Front,Birdle_Back,[4,2,3,1])
+            enemy = Monsters(0,100,"Monke",random.randint(2,5),Monke_Front,Monke_Back,[4,2,3,1])
 
             appear_text = Text(enemy.name+Texts[0],100,700,100,None)
 
