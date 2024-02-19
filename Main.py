@@ -21,6 +21,9 @@ clock = pygame.time.Clock()
 FPS = 60
 
 pygame.mixer.music.load("Music/Overworld.wav")
+#pygame.mixer.music.load("Music/Battle_Transition.wav")
+#pygame.mixer.music.load("Music/Battle.wav")
+
 
 annoying_flag = False
 
@@ -71,10 +74,11 @@ class Textbox(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(topleft = (self.x,self.y))
 
 class Text():
-    def __init__(self,text,x,y,size,index):
+    def __init__(self,text,x,y,size,index,function):
         self.text = text
         self.size = size
         self.index = index
+        self.function = function
 
         self.font=pygame.font.Font(None,self.size)
 
@@ -92,6 +96,9 @@ class Text():
         
     def show_text(self):
         screen.blit(self.display_text,(self.x,self.y))
+
+    def call_function(self,thing):
+        thing()
 
 
 
@@ -133,16 +140,16 @@ class Monsters(pygame.sprite.Sprite):
 
     def display_hp(self,bro):
         if self in bro.monsters:
-            self.hp_text = Text("HP: "+str(self.hp) + "/"+str(self.maxhp),680,520,50,5)
+            self.hp_text = Text("HP: "+str(self.hp) + "/"+str(self.maxhp),680,520,50,5,None)
         else:
-            self.hp_text = Text("HP: "+str(self.hp) + "/"+str(self.maxhp),20,150,50,5)
+            self.hp_text = Text("HP: "+str(self.hp) + "/"+str(self.maxhp),20,150,50,5,None)
         self.hp_text.show_text()
 
     def display_name_lv(self,bro):
         if self in bro.monsters:
-            self.info_text = Text(str(self.name)+"    lv: "+str(self.lv),680,420,50,5)
+            self.info_text = Text(str(self.name)+"    lv: "+str(self.lv),680,420,50,5,None)
         else:
-            self.info_text = Text(str(self.name)+"    lv: "+str(self.lv),20,20,50,5)
+            self.info_text = Text(str(self.name)+"    lv: "+str(self.lv),20,20,50,5,None)
         self.info_text.show_text()
 
     def display_all_info(self,bro):
@@ -152,12 +159,18 @@ class Monsters(pygame.sprite.Sprite):
     def attack_opponent(self,opponent):
         opponent.hp -= self.attack
 
-    def enemy_action(self,bro):
+    def enemy_attack(self,bro):
         if random.randint(0,1) == 0:
             self.attack_opponent(bro.monsters[bro.curr_mon])
-            bro.event_text = Text(" enemy "+str(self.name)+" attacked "+str(bro.monsters[bro.curr_mon].name)+" and did "+str(self.attack)+" damage ",bro.event_text.x,bro.event_text.y,bro.event_text.size,bro.event_text.index)
+            bro.event_text = Text(" enemy "+str(self.name)+" attacked "+str(bro.monsters[bro.curr_mon].name)+" and did "+str(self.attack)+" damage ",bro.event_text.x,bro.event_text.y,bro.event_text.size,bro.event_text.index,None)
         else:
-            bro.event_text = Text(" enemy "+str(self.name)+" is chillin",bro.event_text.x,bro.event_text.y,bro.event_text.size,bro.event_text.index)
+            bro.event_text = Text(" enemy "+str(self.name)+" is chillin",bro.event_text.x,bro.event_text.y,bro.event_text.size,bro.event_text.index,None)
+
+    def player_attack(self,opponent):
+        self.attack_opponent(self,opponent)
+        self.monsters[self.curr_mon].attack_opponent(opponent)
+        self.event_text = Text(str(self.monsters[self.curr_mon].name)+" attacked "+str(opponent.name)+" and did " +str(self.monsters[self.curr_mon].attack)+" damage!",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index,None)
+            
 
 
 
@@ -176,9 +189,6 @@ class Player(pygame.sprite.Sprite):
 
         self.x = x
         self.y = y
-
-        self.save_x = self.x
-        self.save_y = self.y
 
         self.running = False
 
@@ -238,34 +248,38 @@ class Player(pygame.sprite.Sprite):
         self.rect.centerx += self.deltax
         self.rect.centery += self.deltay
 
+    def run(self):
+        if random.randint(0,1) == 0:
+            self.event_text = Text("You ran away (like a stupid dum dum coward )",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index,None)
+            self.your_turn = False
+            self.running = True
+        else:
+            self.event_text = Text("You tried to run but failed :(",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index,None)
+            self.your_turn = False
+
+    def catch(self,opponent):
+        if random.randint(0,1) == 0:
+            self.event_text = Text("You tried to catch "+str(opponent.name)+" and succeeded!",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index,None)
+            self.caught_enemy = True
+            self.running = True
+        else:
+            self.event_text = Text("You tried to catch "+str(opponent.name)+" and failed :(",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index,None)
+            self.caught_enemy = False
+
+
     def action(self,opponent):
         if key[pygame.K_z] and not past_key[pygame.K_z]:
 
             if self.text_index == 0:
                 self.monsters[self.curr_mon].attack_opponent(opponent)
-                self.event_text = Text(str(self.monsters[self.curr_mon].name)+" attacked "+str(opponent.name)+" and did " +str(self.monsters[self.curr_mon].attack)+" damage!",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index)
-                #self.event_text.show_text()
-                new_start = time.time()
+                self.event_text = Text(str(self.monsters[self.curr_mon].name)+" attacked "+str(opponent.name)+" and did " +str(self.monsters[self.curr_mon].attack)+" damage!",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index,None)
                 self.your_turn = False
 
             elif self.text_index == 1: #run
-                if random.randint(0,1) == 0:
-                    self.event_text = Text("You ran away (like a stupid dum dum coward )",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index)
-                    self.your_turn = False
-                    self.running = True
-
-                else:
-                    self.event_text = Text("You tried to run but failed :(",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index)
-                    self.your_turn = False
+                actions_list[self.text_index].call_function(actions_list[self.text_index].function)
 
             elif self.text_index == 2: #catch
-                if random.randint(0,1) == 0:
-                    self.event_text = Text("You tried to catch "+str(opponent.name)+" and succeeded!",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index)
-                    self.caught_enemy = True
-                    self.running = True
-                else:
-                    self.event_text = Text("You tried to catch "+str(opponent.name)+" and failed :(",self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index)
-                    self.caught_enemy = False
+                self.catch(opponent)
 
             elif self.text_index == 3: #change monster
                 self.your_turn = False
@@ -284,7 +298,7 @@ class Player(pygame.sprite.Sprite):
         if key[pygame.K_z]:
             screen.blit(player_team.image,(player_team.x,player_team.y))
             for monster in self.monsters:
-                text = font.render(str(monster.name)+"      hp: "+str(monster.maxhp)+"/"+str(monster.hp),False,"Black")
+                text = font.render(str(monster.name)+"      hp: "+str(monster.maxhp)+"/"+str(monster.hp),False,"Black",None)
                 screen.blit(text,(Screen_Width/3,y))
                 y += 50
 
@@ -319,9 +333,7 @@ class Grass(Terrain):
             if random_num <= dude.spawn_chance:
                 dude.spawn_chance = 0
                 print("YOO")
-                player.can_control = False
-                player.save_x = player.rect.x
-                player.save_y = player.rect.y
+                dude.can_control = False
                 return True
             else:
                 dude.spawn_chance +=1
@@ -331,7 +343,7 @@ class Grass(Terrain):
 def transition_to_battle(bro):
     global radius
     global transition_circle
-    if radius < 1000:
+    if radius < 700:
             bro.rect.centerx -= bro.deltax
             bro.rect.centery -= bro.deltay
             radius += 5
@@ -344,7 +356,7 @@ def transition_to_battle(bro):
 
 if True:
     player = Player(Screen_Width/2,Screen_Height/2)
-    player.event_text = Text(" ",100,700,50,5)
+    player.event_text = Text(" ",100,700,50,5,None)
     wall_top = Terrain(0,0,Screen_Width,50,"Brown")
     wall_left = Terrain(0,0,50,Screen_Height,"Brown")
     wall_bottom = Terrain(0,Screen_Height-50,Screen_Width,50,"Brown")
@@ -415,6 +427,8 @@ while keepGameRunning:
         transition_to_battle(player)
 
     if player.battling:
+        player.deltax = 0
+        player.deltay = 0
 
         # immediately draw textboxes, as they are on the lowest layer below the text and graphics
         textboxs_sprites.draw(screen)
@@ -426,12 +440,12 @@ while keepGameRunning:
 
             enemy = Monsters(0,100,"Monke",random.randint(2,5),Monke_Front,Monke_Back,[4,2,3,1])
 
-            appear_text = Text(enemy.name+Texts[0],100,700,100,None)
+            appear_text = Text(enemy.name+Texts[0],100,700,100,None,None)
 
-            attack_text = Text("Attack",100,700,50,0)
-            run_text = Text("Run",300,700,50,1)
-            catch_text = Text("Catch",450,700,50,2)
-            change_text = Text("Change Monster",650,700,50,3)
+            attack_text = Text("Attack",100,700,50,0,None)
+            run_text = Text("Run",300,700,50,1,player.run)
+            catch_text = Text("Catch",450,700,50,2,player.catch)
+            change_text = Text("Change Monster",650,700,50,3,None)
 
             event_text_list = [player.event_text]
 
@@ -439,7 +453,6 @@ while keepGameRunning:
 
 
             initiated = True
-
         if not player.can_control:
             # transition from overworld to battle, enemy moves on screen and text says they have appeared
             enemy.load_monster()
@@ -477,15 +490,13 @@ while keepGameRunning:
                         radius = 0
                         transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
                         player.your_turn = True
-                        player.rect.x = player.save_x
-                        player.rect.y = player.save_y
                         player.running = False
                         if player.caught_enemy:
                             player.monsters.append(enemy)
                         player.caught_enemy = False
 
 
-                    enemy.enemy_action(player)
+                    enemy.enemy_attack(player)
                     annoying_flag = True
                     
 
@@ -494,19 +505,14 @@ while keepGameRunning:
                         player.your_turn = True
                         annoying_flag = False
 
-                #player.text_move(actions_list)
-                #player.action(enemy)
-
-                #time.sleep(.5)
-                #time.sleep(.5)
-                #player.your_turn = True
-
 
 
 
 
         # enemy is displayed no matter the if else condition because he's there for the opening transition
         enemy.display_monster(player)
+        player.deltax = 0
+        player.deltay = 0
     past_key = key
     print(str(player.rect.x) +","+str(player.rect.y))
     pygame.display.flip()
