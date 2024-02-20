@@ -356,10 +356,9 @@ class Grass(Terrain):
 
     def battle_true(self,dude):
         if dude.rect.colliderect(self.rect) and dude.deltax !=0 or dude.rect.colliderect(self.rect) and dude.deltay !=0:
-            random_num = random.randint(0,1000)
+            random_num = random.randint(0,100000)
             if random_num <= dude.spawn_chance:
                 dude.spawn_chance = 0
-                print("YOO")
                 dude.can_control = False
                 return True
             else:
@@ -429,6 +428,8 @@ if True:
 
     text = Text(healing_block.heal_player_inventory(player),100,10,50,None,None)
 
+    inventory_text = Text("z/arrow keys used for all inputs, hold z to see your monsters ",10,Screen_Height-50,50,None,None)
+
     initiated = False
     radius = 0
     transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
@@ -439,6 +440,7 @@ def overworld_loop():
     global radius
     global flag
     global text
+    global inventory_text
 
     player.move()
     player.update_position()
@@ -458,6 +460,8 @@ def overworld_loop():
 
     for wall in wall_sprites:
         wall.block(player)
+
+    inventory_text.show_text()
 
     screen.blit(transition_circle,((Screen_Width/2)-radius,(Screen_Height/2)-radius))
 
