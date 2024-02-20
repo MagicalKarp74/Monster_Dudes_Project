@@ -20,7 +20,6 @@ clock = pygame.time.Clock()
 
 FPS = 60
 
-pygame.mixer.music.load("Music/Overworld.wav")
 #pygame.mixer.music.load("Music/Battle_Transition.wav")
 #pygame.mixer.music.load("Music/Battle.wav")
 
@@ -174,11 +173,11 @@ class Monsters(pygame.sprite.Sprite):
 
 
 
-Birdle = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[4,2,3,1])
-Angry_rat = Monsters(0,100,"Angry Rat",5,Angry_Rat_Front,Angry_Rat_Back,[3,5,2,1])
-Monke = Monsters(0,100,"Monke",5,Monke_Front,Monke_Back,[4,2,2,2])
+Birdle = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[4,2,3])
+Angry_rat = Monsters(0,100,"Angry Rat",5,Angry_Rat_Front,Angry_Rat_Back,[3,5,2])
+Monke = Monsters(0,100,"Monke",5,Monke_Front,Monke_Back,[4,2,2])
         
-
+base_monsters = [Birdle,Angry_rat,Monke]
     
 
 class Player(pygame.sprite.Sprite):
@@ -283,11 +282,30 @@ class Player(pygame.sprite.Sprite):
         if key[pygame.K_z]:
             screen.blit(player_team.image,(player_team.x,player_team.y))
             for monster in self.monsters:
-                text = font.render(str(monster.name)+"      hp: "+str(monster.maxhp)+"/"+str(monster.hp),False,"Black",None)
+                text = font.render(str(monster.name)+"      hp: "+str(monster.hp)+"/"+str(monster.maxhp),False,"Black",None)
                 screen.blit(text,(Screen_Width/3,y))
                 y += 50
 
+    def reset_to_overworld(self):
+        global initiated
+        global transition_circle
+        global radius
+        global stupid_music_flag
 
+        self.battling = False
+        self.can_control = True
+        self.your_turn = True
+        self.running = False
+
+        radius = 0
+        initiated = False
+        transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
+        stupid_music_flag = False
+        pygame.mixer.music.load("Music/Overworld.wav")
+        pygame.mixer.music.play(-1)
+
+
+        
 class Terrain(pygame.sprite.Sprite):
     def __init__(self,x,y,xsize,ysize,color):
         super().__init__()
@@ -328,7 +346,7 @@ class Grass(Terrain):
 def transition_to_battle(bro):
     global radius
     global transition_circle
-    if radius < 700:
+    if radius < 990:
             bro.rect.centerx -= bro.deltax
             bro.rect.centery -= bro.deltay
             radius += 5
@@ -401,8 +419,11 @@ def overworld_loop():
     player.show_team()
     screen.blit(transition_circle,((Screen_Width/2)-radius,(Screen_Height/2)-radius))
 
+pygame.mixer.music.load("Music/Overworld.wav")
 pygame.mixer.music.play(-1)
 ################################################
+
+stupid_music_flag = False
 
 keepGameRunning = True
 
@@ -423,6 +444,10 @@ while keepGameRunning:
 
     if not player.can_control:
         transition_to_battle(player)
+        if not stupid_music_flag:
+            pygame.mixer.music.load("Music/Battle_Transition.wav")
+            pygame.mixer.music.play(0)
+            stupid_music_flag = True
 
     if player.battling:
         player.deltax = 0
@@ -434,9 +459,21 @@ while keepGameRunning:
         if not initiated:
 
             #defines texts and enemys needed for battle
-            print("initating")
 
-            enemy = Monsters(0,100,"Monke",random.randint(2,5),Monke_Front,Monke_Back,[4,2,3,1])
+            #enemy = Monsters(0,100,"Monke",random.randint(2,5),Monke_Front,Monke_Back,[4,2,3])
+            ran_num = random.randint(0,2)
+
+            if ran_num == 0: 
+                enemy = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[4,2,3])
+            elif ran_num == 1:
+                enemy = Monsters(0,100,"Angry Rat",5,Angry_Rat_Front,Angry_Rat_Back,[3,5,2])
+            else:
+                enemy = Monsters(0,100,"Monke",5,Monke_Front,Monke_Back,[4,2,2])
+        
+        
+
+        
+            #enemy = base_monsters[0]
 
             appear_text = Text(enemy.name+Texts[0],100,700,100,None,None)
 
@@ -448,6 +485,9 @@ while keepGameRunning:
             #event_text_list = [player.event_text]
 
             actions_list = [attack_text,run_text,catch_text,change_text]
+
+            pygame.mixer.music.load("Music/Battle.wav")
+            pygame.mixer.music.play(-1)
 
 
             initiated = True
@@ -472,7 +512,6 @@ while keepGameRunning:
 
                 player.text_move(actions_list)
                 player.action(enemy,player)
-                #current_timer = timer
 
                 for action in actions_list:
                     action.display_text = action.font.render(action.text,False,action.color(player))
@@ -482,20 +521,15 @@ while keepGameRunning:
                 player.event_text.show_text()
                 if player.move_next_text_box() and not annoying_flag:
                     if player.running:
-                        player.battling = False
-                        player.can_control = True
-                        initiated = False
-                        radius = 0
-                        transition_circle = pygame.Surface((radius*2, radius*2),pygame.SRCALPHA, 32)
-                        player.your_turn = True
-                        player.running = False
+                        player.reset_to_overworld()
                         if player.caught_enemy:
                             player.monsters.append(enemy)
                         player.caught_enemy = False
+                        annoying_flag = False
 
-
-                    enemy.enemy_attack(player)
-                    annoying_flag = True
+                    else:
+                        enemy.enemy_attack(player)
+                        annoying_flag = True
                     
 
                 elif annoying_flag:
@@ -511,9 +545,9 @@ while keepGameRunning:
         enemy.display_monster(player)
         player.deltax = 0
         player.deltay = 0
-        
+
     past_key = key
-    print(str(player.rect.x) +","+str(player.rect.y))
+    #print(str(player.rect.x) +","+str(player.rect.y))
     pygame.display.flip()
 
 
