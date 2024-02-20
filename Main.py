@@ -345,6 +345,7 @@ class Heal(Terrain):
                 num += 1
             else:
                 monster.hp = monster.maxhp
+                
         if num == len(character.monsters):
             return "Your monsters are already full health"
         else:
@@ -601,3 +602,4 @@ while keepGameRunning:
 
 pygame.quit()
 sys.exit()
+
