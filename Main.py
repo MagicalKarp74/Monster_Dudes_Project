@@ -22,7 +22,7 @@ FPS = 60
 
 #pygame.mixer.music.load("Music/Battle_Transition.wav")
 #pygame.mixer.music.load("Music/Battle.wav")
-
+flag = False
 
 annoying_flag = False
 
@@ -286,6 +286,15 @@ class Player(pygame.sprite.Sprite):
                 screen.blit(text,(Screen_Width/3,y))
                 y += 50
 
+    def change_monster(self,opponent,bro):
+        def new_index(self):
+            self.curr_mon += 1
+            if self.curr_mon > len(self.monsters)-1:
+                self.curr_mon = 0
+            return self.curr_mon
+
+        self.event_text = Text("You changed from "+str(self.monsters[self.curr_mon].name)+" to "+str(self.monsters[new_index(self)].name),self.event_text.x,self.event_text.y,self.event_text.size,self.event_text.index,None)
+
     def reset_to_overworld(self):
         global initiated
         global transition_circle
@@ -303,7 +312,6 @@ class Player(pygame.sprite.Sprite):
         stupid_music_flag = False
         pygame.mixer.music.load("Music/Overworld.wav")
         pygame.mixer.music.play(-1)
-
 
         
 class Terrain(pygame.sprite.Sprite):
@@ -325,6 +333,22 @@ class Terrain(pygame.sprite.Sprite):
         if dude.rect.colliderect(self.rect):
             dude.rect.centerx -= dude.deltax
             dude.rect.centery -= dude.deltay
+
+class Heal(Terrain):
+    def __init__(self,x,y,xsize,ysize,color):
+        super().__init__(x,y,xsize,ysize,color)
+
+    def heal_player_inventory(self,character):
+        num = 0
+        for monster in character.monsters:
+            if monster.hp == monster.maxhp:
+                num += 1
+            else:
+                monster.hp = monster.maxhp
+        if num == len(character.monsters):
+            return "Your monsters are already full health"
+        else:
+            return "Your monsters are back to full health!"
 
 class Grass(Terrain):
     def __init__(self,x,y,xsize,ysize,color):
@@ -364,19 +388,20 @@ if True:
     attack_text = Text("Attack",100,700,50,0,player.monsters[player.curr_mon].player_attack)
     run_text = Text("Run",300,700,50,1,player.run)
     catch_text = Text("Catch",450,700,50,2,player.catch)
-    change_text = Text("Change Monster",650,700,50,3,None)
+    change_text = Text("Change Monster",650,700,50,3,player.change_monster)
 
     actions_list = [attack_text,run_text,catch_text,change_text]
 
     player.act_list = actions_list
 
 
-
-
     wall_top = Terrain(0,0,Screen_Width,50,"Brown")
     wall_left = Terrain(0,0,50,Screen_Height,"Brown")
     wall_bottom = Terrain(0,Screen_Height-50,Screen_Width,50,"Brown")
     wall_right = Terrain(Screen_Width-50,0,50,Screen_Height,"Brown")
+
+    healing_block = Heal(100,100,50,50,"Purple")
+
     grass = Grass(550,350,Screen_Height-400,Screen_Height-400,"Green")
 
     event_text = Textbox(0,650,1000,200)
@@ -396,10 +421,13 @@ if True:
     game_sprites.add(grass)
     game_sprites.add(player)
 
+    wall_sprites.add(healing_block)
     wall_sprites.add(wall_top)
     wall_sprites.add(wall_left)
     wall_sprites.add(wall_bottom)
     wall_sprites.add(wall_right)
+
+    text = Text(healing_block.heal_player_inventory(player),100,10,50,None,None)
 
     initiated = False
     radius = 0
@@ -409,14 +437,28 @@ if True:
 
 def overworld_loop():
     global radius
+    global flag
+    global text
+
     player.move()
     player.update_position()
-    for wall in wall_sprites:
-        wall.block(player)
+
     wall_sprites.draw(screen)
     grass.battle_true(player)
     game_sprites.draw(screen)
     player.show_team()
+
+    if player.rect.colliderect(healing_block.rect):
+        if not flag:
+            text = Text(healing_block.heal_player_inventory(player),100,10,50,None,None)
+            flag = True
+        text.show_text()
+    else:
+        flag = False
+
+    for wall in wall_sprites:
+        wall.block(player)
+
     screen.blit(transition_circle,((Screen_Width/2)-radius,(Screen_Height/2)-radius))
 
 pygame.mixer.music.load("Music/Overworld.wav")
