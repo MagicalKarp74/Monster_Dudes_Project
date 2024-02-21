@@ -4,6 +4,7 @@ from pygame import mixer
 
 import random
 import time
+import math
 
 radius = 0
 
@@ -26,6 +27,8 @@ flag = False
 
 annoying_flag = False
 
+Title_Screen = pygame.image.load("Images/Title_Screen.png")
+
 Main_Dude_Front = pygame.image.load("Images/Main_Dude_Front.png")
 
 Birdle_Front = pygame.image.load("Images/Birdle_Front.png")
@@ -37,6 +40,15 @@ Angry_Rat_Back = pygame.image.load("Images/Angry_Rat_Back.png")
 Monke_Front = pygame.image.load("Images/Monke_Front.png")
 Monke_Back = pygame.image.load("Images/Monke_Back.png")
 
+Cool_Guy_Overworld = pygame.image.load("Images/Cool_Guy_Overworld.png")
+Cool_Guy_Profile = pygame.image.load("Images/Cool_Guy_Profile.png")
+
+Crazy_Man_Overworld = pygame.image.load("Images/Crazy_Man_Overworld.png")
+Crazy_Man_Profile = pygame.image.load("Images/Crazy_Man_Profile.png")
+
+
+
+
 Main_Dude_Front = pygame.transform.scale(Main_Dude_Front,(55,50))
 
 Birdle_Front = pygame.transform.scale(Birdle_Front,(300,200))
@@ -47,6 +59,13 @@ Angry_Rat_Back = pygame.transform.scale(Angry_Rat_Back,(300,200))
 
 Monke_Front = pygame.transform.scale(Monke_Front,(300,200))
 Monke_Back = pygame.transform.scale(Monke_Back,(300,200))
+
+Cool_Guy_Overworld = pygame.transform.scale(Cool_Guy_Overworld,(70,100))
+Cool_Guy_Profile = pygame.transform.scale(Cool_Guy_Profile,(200,200))
+
+Crazy_Man_Overworld = pygame.transform.scale(Crazy_Man_Overworld,(70,100))
+Crazy_Man_Profile = pygame.transform.scale(Crazy_Man_Profile,(200,200))
+
 
 
 Texts = [" has appeared!",["Run","Attack","Catch","Change Monster"]]
@@ -278,7 +297,7 @@ class Player(pygame.sprite.Sprite):
             return False
 
     def show_team(self):
-        y = 300
+        y = 200
         if key[pygame.K_z]:
             screen.blit(player_team.image,(player_team.x,player_team.y))
             for monster in self.monsters:
@@ -339,17 +358,51 @@ class Heal(Terrain):
         super().__init__(x,y,xsize,ysize,color)
 
     def heal_player_inventory(self,character):
-        num = 0
+        num_max_hp = 0
         for monster in character.monsters:
             if monster.hp == monster.maxhp:
-                num += 1
+                num_max_hp += 1
             else:
                 monster.hp = monster.maxhp
                 
-        if num == len(character.monsters):
+        if num_max_hp == len(character.monsters):
             return "Your monsters are already full health"
         else:
             return "Your monsters are back to full health!"
+
+class NPC(Terrain):
+    def __init__(self,x,y,overworld_image,profile_image,name,text):
+        super(Terrain).__init__()
+        self.x = x
+        self.y = y
+        self.overworld_image = overworld_image
+        self.profile_image = profile_image
+        self.name = name
+        self.rect = self.overworld_image.get_rect(center =(self.x,self.y))
+
+        self.font=pygame.font.Font(None,50)
+        self.text = text
+        self.text = self.font.render(self.text,False,"Black")
+        self.text_name =  self.font.render(self.name,False,"Black")
+        
+
+    def display_info(self,bro):
+
+        def in_distance(bro):
+            if math.sqrt(((bro.rect.centerx - self.x) * (bro.rect.centerx - self.x))  +  ((bro.rect.centery - self.y) * (bro.rect.centery - self.y)))  < 100:
+                return True
+            
+        if in_distance(bro):
+            screen.blit(event_textbox.image,(event_textbox.x,event_textbox.y-100))
+            screen.blit(self.text,(100,600))
+            screen.blit(self.profile_image,(700,550))
+            screen.blit(self.text_name,(520,710))
+
+            
+        
+                
+        
+
 
 class Grass(Terrain):
     def __init__(self,x,y,xsize,ysize,color):
@@ -385,6 +438,9 @@ if True:
     player = Player(Screen_Width/2,Screen_Height/2,[])
     player.event_text = Text(" ",100,700,50,5,None)
 
+    cool_guy = NPC(800,100,Cool_Guy_Overworld,Cool_Guy_Profile,"Cool Guy","Birdle is so flippin rad!!!!!!!!!!!")
+    crazy_man = NPC(800,600,Crazy_Man_Overworld,Crazy_Man_Profile,"Crazy monke man","THE MONKES ARE WATCHING")
+
     attack_text = Text("Attack",100,700,50,0,player.monsters[player.curr_mon].player_attack)
     run_text = Text("Run",300,700,50,1,player.run)
     catch_text = Text("Catch",450,700,50,2,player.catch)
@@ -404,14 +460,14 @@ if True:
 
     grass = Grass(550,350,Screen_Height-400,Screen_Height-400,"Green")
 
-    event_text = Textbox(0,650,1000,200)
+    event_textbox = Textbox(0,650,1000,200)
     player_stats = Textbox(650,400,350,200)
     enemy_stats = Textbox(0,0,350,200)
 
     player_team = Textbox(250,150,500,500)
 
     textboxs_sprites = pygame.sprite.Group()
-    textboxs_sprites.add(event_text)
+    textboxs_sprites.add(event_textbox)
     textboxs_sprites.add(player_stats)
     textboxs_sprites.add(enemy_stats)
 
@@ -461,6 +517,12 @@ def overworld_loop():
 
     for wall in wall_sprites:
         wall.block(player)
+
+    screen.blit(cool_guy.overworld_image,(cool_guy.x,cool_guy.y))
+    screen.blit(crazy_man.overworld_image,(crazy_man.x,crazy_man.y))
+
+    cool_guy.display_info(player)
+    crazy_man.display_info(player)
 
     inventory_text.show_text()
 
@@ -575,8 +637,13 @@ while keepGameRunning:
                         annoying_flag = False
 
                     else:
-                        enemy.enemy_attack(player)
-                        annoying_flag = True
+                        if enemy.hp <= 0:
+                            enemy.hp = 0
+                            player.event_text = Text(" Enemy died you get zero xp cus IDC about lv's rn :)",player.event_text.x,player.event_text.y,player.event_text.size,player.event_text.index,None)
+                            player.running = True
+                        else:
+                            enemy.enemy_attack(player)
+                            annoying_flag = True
                     
 
                 elif annoying_flag:
