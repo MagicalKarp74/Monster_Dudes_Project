@@ -176,6 +176,8 @@ class Monsters(pygame.sprite.Sprite):
 
     def attack_opponent(self,opponent,bro):
         opponent.hp -= self.attack
+        if opponent.hp < 0:
+            opponent.hp = 0
 
     def enemy_attack(self,bro):
         if random.randint(0,1) == 0:
@@ -413,7 +415,7 @@ class Grass(Terrain):
 
     def battle_true(self,dude):
         if dude.rect.colliderect(self.rect) and dude.deltax !=0 or dude.rect.colliderect(self.rect) and dude.deltay !=0:
-            random_num = random.randint(0,10000)
+            random_num = random.randint(0,50000)
             if random_num <= dude.spawn_chance:
                 dude.spawn_chance = 0
                 dude.can_control = False
@@ -549,10 +551,10 @@ while keepGameRunning:
 
 ################################################
 #code between hashtags is from https://www.geeksforgeeks.org/how-to-set-up-the-game-loop-in-pyggame/
-    screen.fill("Gray")   
+    screen.fill("Gray")
 
     if player.can_control:    
-        key = pygame.key.get_pressed()
+        key = pygame.key.get_pressed() 
 
     if not player.battling:
         overworld_loop()
@@ -643,8 +645,7 @@ while keepGameRunning:
                         annoying_flag = False
 
                     else:
-                        if enemy.hp <= 0:
-                            enemy.hp = 0
+                        if enemy.hp == 0:
                             player.event_text = Text(" Enemy died you get zero xp cus IDC about lv's rn :)",player.event_text.x,player.event_text.y,player.event_text.size,player.event_text.index,None)
                             player.running = True
                         else:
