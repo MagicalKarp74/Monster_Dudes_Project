@@ -185,16 +185,19 @@ class Monsters(pygame.sprite.Sprite):
             bro.event_text = Text(" enemy "+str(self.name)+" is chillin",bro.event_text.x,bro.event_text.y,bro.event_text.size,bro.event_text.index,None)
 
     def player_attack(self,opponent,bro):
-        self.attack_opponent(opponent,bro)
-        bro.event_text = Text(str(bro.monsters[bro.curr_mon].name)+" attacked "+str(opponent.name)+" and did " +str(bro.monsters[bro.curr_mon].attack)+" damage!",bro.event_text.x,bro.event_text.y,bro.event_text.size,bro.event_text.index,None)
+        if bro.monsters[bro.curr_mon].hp <=0:
+            bro.event_text = Text("Bro your dudes dead he ain't attacking bruh",bro.event_text.x,bro.event_text.y,bro.event_text.size,bro.event_text.index,None)
+        else:
+            self.attack_opponent(opponent,bro)
+            bro.event_text = Text(str(bro.monsters[bro.curr_mon].name)+" attacked "+str(opponent.name)+" and did " +str(bro.monsters[bro.curr_mon].attack)+" damage!",bro.event_text.x,bro.event_text.y,bro.event_text.size,bro.event_text.index,None)
             
 
 
 
 
-Birdle = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[4,2,3])
-Angry_rat = Monsters(0,100,"Angry Rat",5,Angry_Rat_Front,Angry_Rat_Back,[3,5,2])
-Monke = Monsters(0,100,"Monke",5,Monke_Front,Monke_Back,[4,2,2])
+Birdle = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[7,2,3])
+Angry_rat = Monsters(0,100,"Angry Rat",5,Angry_Rat_Front,Angry_Rat_Back,[5,5,2])
+Monke = Monsters(0,100,"Monke",5,Monke_Front,Monke_Back,[6,3,2])
         
 base_monsters = [Birdle,Angry_rat,Monke]
     
@@ -211,7 +214,7 @@ class Player(pygame.sprite.Sprite):
 
         self.running = False
 
-        self.monsters = [Monke,Angry_rat,Birdle]
+        self.monsters = [Monke]
         self.curr_mon = 0
 
         self.caught_enemy = False
@@ -393,9 +396,9 @@ class NPC(Terrain):
                 return True
             
         if in_distance(bro):
-            screen.blit(event_textbox.image,(event_textbox.x,event_textbox.y-100))
-            screen.blit(self.text,(100,600))
-            screen.blit(self.profile_image,(700,550))
+            screen.blit(event_textbox.image,(event_textbox.x,event_textbox.y-50))
+            screen.blit(self.text,(100,650))
+            screen.blit(self.profile_image,(700,600))
             screen.blit(self.text_name,(520,710))
 
             
@@ -410,7 +413,7 @@ class Grass(Terrain):
 
     def battle_true(self,dude):
         if dude.rect.colliderect(self.rect) and dude.deltax !=0 or dude.rect.colliderect(self.rect) and dude.deltay !=0:
-            random_num = random.randint(0,100000)
+            random_num = random.randint(0,10000)
             if random_num <= dude.spawn_chance:
                 dude.spawn_chance = 0
                 dude.can_control = False
@@ -439,7 +442,7 @@ if True:
     player.event_text = Text(" ",100,700,50,5,None)
 
     cool_guy = NPC(800,100,Cool_Guy_Overworld,Cool_Guy_Profile,"Cool Guy","Birdle is so flippin rad!!!!!!!!!!!")
-    crazy_man = NPC(800,600,Crazy_Man_Overworld,Crazy_Man_Profile,"Crazy monke man","THE MONKES ARE WATCHING")
+    crazy_man = NPC(800,600,Crazy_Man_Overworld,Crazy_Man_Profile,"Insane man   ","THE MONKES ARE WATCHING")
 
     attack_text = Text("Attack",100,700,50,0,player.monsters[player.curr_mon].player_attack)
     run_text = Text("Run",300,700,50,1,player.run)
@@ -521,10 +524,13 @@ def overworld_loop():
     screen.blit(cool_guy.overworld_image,(cool_guy.x,cool_guy.y))
     screen.blit(crazy_man.overworld_image,(crazy_man.x,crazy_man.y))
 
-    cool_guy.display_info(player)
-    crazy_man.display_info(player)
+    #cool_guy.display_info(player)
+    #crazy_man.display_info(player)
 
     inventory_text.show_text()
+
+    cool_guy.display_info(player)
+    crazy_man.display_info(player)
 
     screen.blit(transition_circle,((Screen_Width/2)-radius,(Screen_Height/2)-radius))
 
@@ -573,11 +579,11 @@ while keepGameRunning:
             ran_num = random.randint(0,2)
 
             if ran_num == 0: 
-                enemy = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[4,2,3])
+                enemy = Monsters(0,100,"Birdle",5,Birdle_Front,Birdle_Back,[7,2,3])
             elif ran_num == 1:
-                enemy = Monsters(0,100,"Angry Rat",5,Angry_Rat_Front,Angry_Rat_Back,[3,5,2])
+                enemy = Monsters(0,100,"Angry Rat",5,Angry_Rat_Front,Angry_Rat_Back,[5,5,2])
             else:
-                enemy = Monsters(0,100,"Monke",5,Monke_Front,Monke_Back,[4,2,2])
+                enemy = Monsters(0,100,"Monke",5,Monke_Front,Monke_Back,[6,3,2])
         
         
 
@@ -669,4 +675,3 @@ while keepGameRunning:
 
 pygame.quit()
 sys.exit()
-
