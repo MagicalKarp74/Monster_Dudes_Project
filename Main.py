@@ -538,9 +538,8 @@ def overworld_loop():
 
 pygame.mixer.music.load("Music/Overworld.wav")
 pygame.mixer.music.play(-1)
-################################################
-
 stupid_music_flag = False
+################################################
 
 keepGameRunning = True
 
@@ -551,6 +550,7 @@ while keepGameRunning:
 
 ################################################
 #code between hashtags is from https://www.geeksforgeeks.org/how-to-set-up-the-game-loop-in-pyggame/
+           
     screen.fill("Gray")
 
     if player.can_control:    
